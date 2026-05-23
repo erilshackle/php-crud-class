@@ -177,7 +177,7 @@ $params = CRUD::query('users')->where('id', 1)->getBindings();
 - PDO habilitado
 
 ## Licença
-> MIT License
+MIT License
 
 ## Autor
-> Eril TS Carvalho
+Eril TS Carvalho
