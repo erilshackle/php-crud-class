@@ -1,14 +1,14 @@
 <?php
 
-namespace Qrud;
+namespace Qcrud;
 
 use PDO;
 use PDOException;
 use InvalidArgumentException;
-use Qrud\Exceptions\QueryException;
+use Qcrud\Exceptions\QueryException;
 
 /**
- * QRud Query Builder - Powerful fluent query builder with intelligent WHERE
+ * Qcrud Query Builder - Powerful fluent query builder with intelligent WHERE
  * 
  * @package QRud
  * @author erilshk <erilandocarvalho@gmail.com>
