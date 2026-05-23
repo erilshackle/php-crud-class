@@ -1,356 +1,183 @@
-# QRUD - Query CRUD 🚀
+# QCrud
 
-A powerful and intuitive CRUD & Query Builder for PHP with Laravel-like syntax, featuring intelligent WHERE clauses and fluent API.
+QCrud é uma biblioteca leve e poderosa para operações CRUD e construção de queries em PHP, inspirada em abordagens modernas como o Query Builder do Laravel, mas com foco em simplicidade, flexibilidade e controle total sobre o SQL.
 
-![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Version](https://img.shields.io/badge/Version-2.0.0-orange)
+## Instalação
 
-## ✨ Features
-
-- **🚀 Fluent Query Builder** - Laravel-like syntax
-- **🎯 Intelligent WHERE** - Smart condition handling
-- **🔒 Secure** - PDO prepared statements
-- **🔄 Transactions** - Full transaction support
-- **📊 Aggregations** - Count, Sum, Avg, Exists
-- **🔗 JOINs** - All JOIN types supported
-- **📄 Pagination** - Built-in pagination
-- **🛠️ Subqueries** - Powerful subquery support
-- **💡 Smart NULL/IN/BETWEEN** - Automatic condition detection
-
-## 📦 Installation
+Via Composer:
 
 ```bash
-composer require erilshk/qrud
+composer require eril/qcrud
 ```
 
-## 🚀 Quick Start
-
-### Basic Setup
-
+## Configuração
+Antes de usar, registre uma conexão PDO
 ```php
-<?php
+use Eril\QCrud\CRUD;
+CRUD::registerConnection(function () {
+    return new PDO(
+        "mysql:host=localhost;dbname=test;charset=utf8",
+        "root",
+        "",
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]
+    );
+});
+```
 
-require_once 'vendor/autoload.php';
-
-use Qrud\CRUD;
-
-// Setup connection
-$pdo = new PDO('mysql:host=localhost;dbname=test', 'username', 'password');
+Também é possível passar diretamente uma instância de PDO:
+```php
 CRUD::registerConnection($pdo);
-
-// Or use a callback for lazy connection
-CRUD::registerConnection([DatabaseFactory::class, 'createConnection']);
 ```
 
-### Basic CRUD Operations
+## Uso Básico (CRUD)
 
+### Inserir registro
 ```php
-// Create
-$userId = CRUD::table('users')->create([
-    'name' => 'John Doe',
-    'email' => 'john@example.com'
+$id = CRUD::table('users')->create([
+    'name' => 'Erilando',
+    'email' => 'email@example.com'
 ]);
-
-// Read
-$user = CRUD::table('users')->read($userId);
-$allUsers = CRUD::table('users')->read();
-
-// Update
-CRUD::table('users')->update($userId, ['name' => 'Jane Doe']);
-
-// Delete
-CRUD::table('users')->delete($userId);
 ```
 
-## 🔥 Query Builder Examples
-
-### Intelligent WHERE Clauses
-
+### Buscar registros
 ```php
-use Qrud\CRUD;
+// Todos
+$users = CRUD::table('users')->read();
 
-// Simple equality
-$users = CRUD::query('users')
-    ->where('status', 'active')
-    ->get();
+// Por ID
+$user = CRUD::table('users')->read(1);
+```
 
-// Comparisons
+### Atualizar registro
+```php
+CRUD::table('users')->update(1, [
+    'name' => 'Novo nome'
+]);
+```
+
+### Deletar registro
+```php
+CRUD::table('users')->delete(1);
+```
+
+### Consulta personalizada
+```php
+$users = CRUD::table('users')->select(
+    'age > ? AND status = ?',
+    [18, 'active']
+);
+```
+
+## Query Builder
+O QCrud inclui um construtor de queries fluente para consultas complexas.
+
+
+### Exemplo básico
+```php
 $users = CRUD::query('users')
     ->where('age', '>', 18)
-    ->where('name', 'LIKE', '%John%')
-    ->get();
-
-// NULL checks (intelligent!)
-$users = CRUD::query('users')
-    ->where('deleted_at', null)        // IS NULL
-    ->where('!updated_at', null)       // IS NOT NULL
-    ->get();
-
-// IN clauses (automatic!)
-$users = CRUD::query('users')
-    ->where('status', ['active', 'pending'])  // IN automatically
-    ->where('!role', ['banned', 'blocked'])   // NOT IN automatically
-    ->get();
-
-// BETWEEN (intelligent syntax)
-$orders = CRUD::query('orders')
-    ->where('created_at', ['2024-01-01', '><', '2024-12-31'])
-    ->get();
-
-// OR conditions
-$users = CRUD::query('users')
-    ->where('status', 'active')
-    ->orWhere('vip', 1)
-    ->orWhere('!deleted_at', null)
-    ->get();
-```
-
-### JOIN Operations
-
-```php
-// INNER JOIN
-$results = CRUD::query('users')
-    ->select('users.*, profiles.bio')
-    ->joinInner('profiles', 'users.id = profiles.user_id')
-    ->get();
-
-// LEFT JOIN with alias
-$results = CRUD::query(['users', 'u'])
-    ->joinLeft(['profiles', 'p'], 'u.id = p.user_id')
-    ->where('u.status', 'active')
-    ->get();
-
-// Multiple JOINs
-$results = CRUD::query('orders')
-    ->joinInner('users', 'orders.user_id = users.id')
-    ->joinLeft('products', 'orders.product_id = products.id')
-    ->get();
-```
-
-### Aggregations and Grouping
-
-```php
-// Count
-$count = CRUD::query('users')
-    ->where('active', 1)
-    ->count();
-
-// Sum and Average
-$total = CRUD::query('orders')
-    ->where('status', 'completed')
-    ->sum('amount');
-
-$avg = CRUD::query('products')
-    ->avg('price');
-
-// Group By with Having
-$stats = CRUD::query('orders')
-    ->select('user_id, COUNT(*) as order_count, SUM(amount) as total')
-    ->groupBy('user_id')
-    ->having('order_count', '>', 5)
-    ->having('total', '>', 1000)
-    ->get();
-```
-
-### Subqueries
-
-```php
-// WHERE subquery
-$users = CRUD::query('users')
-    ->whereSub('id', 'IN', function($query) {
-        $query->where('active', 1)
-              ->where('age', '>', 18);
-    })
-    ->get();
-
-// Complex subquery
-$highValueUsers = CRUD::query('users')
-    ->whereSub('id', 'IN', function($query) {
-        $query->select('user_id')
-              ->from('orders')
-              ->where('amount', '>', 1000)
-              ->groupBy('user_id')
-              ->having('COUNT(*)', '>', 3);
-    })
-    ->get();
-```
-
-### Pagination
-
-```php
-// Simple pagination
-$page1 = CRUD::query('products')
-    ->where('stock', '>', 0)
-    ->paginate(15, 1);
-
-// Full pagination data
-$result = CRUD::query('articles')
-    ->where('published', 1)
-    ->orderBy('created_at', 'DESC')
-    ->paginate(10, 2);
-
-// Returns:
-// [
-//     'data' => [...],
-//     'pagination' => [
-//         'current_page' => 2,
-//         'per_page' => 10,
-//         'total' => 150,
-//         'last_page' => 15
-//     ]
-// ]
-```
-
-### UNION Queries
-
-```php
-$importantUsers = CRUD::query('users')
-    ->select('id, name, "active" as type')
-    ->where('status', 'active')
-    ->union(function($query) {
-        $query->where('vip', 1)
-              ->select('id, name, "vip" as type');
-    })
-    ->union(function($query) {
-        $query->where('admin', 1)
-              ->select('id, name, "admin" as type');
-    })
     ->orderBy('name')
+    ->limit(10)
     ->get();
 ```
-
-## 🔄 Transaction Support
-
+### Where avançado
 ```php
-use Qrud\CRUD;
-
-try {
-    CRUD::beginTransaction();
-    
-    $orderId = CRUD::table('orders')->create([
-        'user_id' => 1,
-        'amount' => 99.99
-    ]);
-    
-    CRUD::table('order_items')->create([
-        'order_id' => $orderId,
-        'product_id' => 123,
-        'quantity' => 2
-    ]);
-    
-    CRUD::table('inventory')->update(123, [
-        'stock' => DB::raw('stock - 2')
-    ]);
-    
-    CRUD::commit();
-    echo "Transaction completed successfully!";
-    
-} catch (Exception $e) {
-    CRUD::rollback();
-    echo "Transaction failed: " . $e->getMessage();
-}
-```
-
-## 🎯 Advanced Examples
-
-### E-commerce Query
-
-```php
-$report = CRUD::query(['orders', 'o'])
-    ->select('o.*, u.name, u.email, COUNT(oi.id) as item_count')
-    ->joinInner(['users', 'u'], 'o.user_id = u.id')
-    ->joinLeft(['order_items', 'oi'], 'o.id = oi.order_id')
-    ->where('o.status', 'completed')
-    ->where('o.created_at', ['2024-01-01', '><', '2024-12-31'])
-    ->where('!o.cancelled', 1)
-    ->groupBy('o.id')
-    ->having('item_count', '>', 0)
-    ->orderBy('o.created_at', 'DESC')
-    ->paginate(20, 1);
-```
-
-### Complex Reporting
-
-```php
-$salesReport = CRUD::query('orders')
-    ->select('DATE(created_at) as date, 
-              COUNT(*) as order_count, 
-              SUM(amount) as daily_revenue,
-              AVG(amount) as avg_order_value')
-    ->where('status', 'completed')
-    ->whereBetween('created_at', '2024-01-01', '2024-01-31')
-    ->groupBy('DATE(created_at)')
-    ->having('daily_revenue', '>', 1000)
-    ->orderBy('date', 'ASC')
-    ->get();
-```
-
-## 🔧 Debugging
-
-```php
-// Get generated SQL
-$query = CRUD::query('users')
+CRUD::query('users')
     ->where('status', 'active')
-    ->where('age', '>', 18);
-
-echo $query->toSql(); 
-// SELECT * FROM users WHERE status = ? AND age > ?
-
-print_r($query->getBindings());
-// ['active', 18]
-
-// Or use mountSQL() for complete SQL with bindings
-echo $query->mountSQL();
+    ->orWhere('role', ['admin', 'editor'])
+    ->get();
 ```
-
-## 📚 API Reference
-
-### CRUD Class Methods
-
-- `table(string $name, string $refKey = "id")` - Create CRUD instance
-- `create(array $data)` - Insert record
-- `read(mixed $id = null, ?string $select = null)` - Read record(s)
-- `update(mixed $id, array $data)` - Update record
-- `delete(mixed $id)` - Delete record
-- `select(?string $where, array $params = [], ?string $fields = '*')` - Custom SELECT
-- `query(string|array $table, string $select = '*')` - Create QueryBuilder
-
-### QueryCrud Methods
-
-- `where() / orWhere()` - Intelligent conditions
-- `join*()` - All JOIN types
-- `groupBy() / having()` - Grouping
-- `orderBy() / limit()` - Sorting & limits
-- `count() / sum() / avg() / exists()` - Aggregations
-- `paginate()` - Pagination
-- `union()` - UNION queries
-- `get() / first()` - Execution
-
-## 🐛 Error Handling
-
+### Between
 ```php
-try {
-    $user = CRUD::table('users')->read(123);
-} catch (\Qrud\Exceptions\QueryException $e) {
-    echo "Query failed: " . $e->getMessage();
-} catch (\Qrud\Exceptions\ConnectionException $e) {
-    echo "Connection failed: " . $e->getMessage();
-}
+CRUD::query('users')
+    ->whereBetween('age', 18, 30)
+    ->get();
+```
+### Joins
+```php
+CRUD::query('users u')
+    ->join(['posts', 'p'], 'p.user_id = u.id')
+    ->get();
+```
+### Group By e Having
+```php
+CRUD::query('orders')
+    ->select('user_id, COUNT(*) as total')
+    ->groupBy('user_id')
+    ->having('total', '>', 5)
+    ->get();
+```
+### Subqueries
+```php
+CRUD::query('users')
+    ->whereSub('id', 'IN', function($q) {
+        $q->select('user_id')
+          ->where('status', 'active');
+    }, 'orders')
+    ->get();
+```
+### Paginação
+```php
+$result = CRUD::query('users')
+    ->paginate(10, 1);
+
+$data = $result['data'];
+$meta = $result['pagination'];
+```
+## Métodos úteis
+
+### Primeiro resultado
+```php
+$user = CRUD::query('users')->first();
+```
+### Contagem
+```php
+$total = CRUD::query('users')->count();
+```
+### Soma
+```php
+$total = CRUD::query('orders')->sum('price');
+```
+### Média
+```php
+$avg = CRUD::query('orders')->avg('price');
+```
+### Verificar existência
+```php
+$exists = CRUD::query('users')
+    ->where('email', 'test@example.com')
+    ->exists();
+```
+## Transações
+```php
+CRUD::beginTransaction();
+
+CRUD::table('users')->create([...]);
+CRUD::table('profiles')->create([...]);
+
+CRUD::commit();
+```
+> Em caso de erro, a transação é revertida automaticamente.
+
+## Debug
+
+### Ver SQL gerado
+```php
+$sql = CRUD::query('users')->where('id', 1)->toSql();
+```
+### Bindings
+```php
+$params = CRUD::query('users')->where('id', 1)->getBindings();
 ```
 
-## 🤝 Contributing
+## Requisitos
+- PHP >= 8.0
+- PDO habilitado
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## Licença
+> MIT License
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Inspired by Laravel's Eloquent and Query Builder
-- Built with PHP 8+ features
-- Focus on developer experience and productivity
+## Autor
+> Eril TS Carvalho
