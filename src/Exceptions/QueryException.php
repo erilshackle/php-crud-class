@@ -1,6 +1,6 @@
 <?php
 
-namespace Qrud\Exceptions;
+namespace Qcrud\Exceptions;
 
 class QueryException extends \Exception
 {
