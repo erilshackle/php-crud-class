@@ -1,6 +1,6 @@
 <?php
 
-namespace Qrud;
+namespace Qcrud;
 
 use PDO;
 use PDOException;
