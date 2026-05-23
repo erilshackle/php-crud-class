@@ -1,10 +1,9 @@
 {
-    "name": "erilshk/qrud",
+    "name": "eril/qcrud",
     "description": "A powerful and intuitive CRUD & Query Builder for PHP with Laravel-like syntax",
     "type": "library",
     "keywords": ["crud", "query-builder", "database", "pdo", "orm", "mysql", "sql"],
     "license": "MIT",
-    "version": "2.0.0",
     "authors": [
         {
             "name": "Eril Shackle",
@@ -17,12 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Qrud\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Qrud\\Tests\\": "tests/"
+            "Eril\\Qcrud\\": "src/"
         }
     },
     "suggest": {
