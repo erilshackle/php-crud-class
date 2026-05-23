@@ -4,11 +4,11 @@ namespace Qcrud;
 
 use PDO;
 use PDOException;
-use Qrud\Exceptions\ConnectionException;
-use Qrud\Exceptions\QueryException;
+use Qcrud\Exceptions\ConnectionException;
+use Qcrud\Exceptions\QueryException;
 
 /**
- * QRud - Powerful CRUD Operations with Query Builder
+ * Qcrud - Powerful CRUD Operations with Query Builder
  * 
  * @package QRud
  * @author erilshk <erilandocarvalho@gmail.com>
